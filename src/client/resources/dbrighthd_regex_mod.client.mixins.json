@@ -1,0 +1,11 @@
+{
+	"required": true,
+	"package": "com.dbrighthd.regexmod.mixin.client",
+	"compatibilityLevel": "JAVA_21",
+	"client": [
+		"UnbakedSwitchMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}
