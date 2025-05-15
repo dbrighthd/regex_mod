@@ -1,2 +1,1 @@
-# regex_mod
-Item Regex Mod
+Uses the fabric template from the fabric website
