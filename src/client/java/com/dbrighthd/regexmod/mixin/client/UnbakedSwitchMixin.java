@@ -1,6 +1,7 @@
 package com.dbrighthd.regexmod.mixin.client;
 
 import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -66,8 +67,19 @@ public class UnbakedSwitchMixin {
 		ModelSelector<T> selector = (value, world) -> {
 			ItemModel m = exactMatches.get(value);
 			if (m != fallback) return m;
+
+			// Convert value to a string for regex matching
+			String s = null;
 			if (value instanceof Text tv) {
-				String s = tv.getString();
+				s = tv.getString();
+			} else if (value instanceof Identifier id) {
+				s = id.toString();
+			} else if (value instanceof String str) {
+				s = str;
+			}
+
+			// Perform regex match if string representation is available
+			if (s != null) {
 				for (Pair<Pattern, ItemModel> rc : regexCases) {
 					if (rc.getFirst().matcher(s).matches()) {
 						return rc.getSecond();
