@@ -18,10 +18,10 @@
 	"environment": "*",
 	"entrypoints": {
 		"main": [
-			"com.dbrighthd.regexmod.Dbrighthd_regex_mod"
+			"com.dbrighthd.regexmod.RegexMod"
 		],
 		"client": [
-			"com.dbrighthd.regexmod.Dbrighthd_regex_modClient"
+			"com.dbrighthd.regexmod.RegexModClient"
 		]
 	},
 	"mixins": [
