@@ -3,11 +3,12 @@ package com.dbrighthd.regexmod.selector;
 import com.dbrighthd.regexmod.cache.StringPool;
 import com.mojang.datafixers.util.Pair;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-import net.minecraft.client.render.item.model.ItemModel;
-import net.minecraft.client.render.item.model.SelectItemModel.ModelSelector;
-import net.minecraft.client.world.ClientWorld;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.renderer.item.ItemModel;
+import net.minecraft.client.renderer.item.SelectItemModel.ModelSelector;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
+import org.jspecify.annotations.Nullable;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -43,26 +44,22 @@ public class RegexModelSelector<T> implements ModelSelector<T> {
     }
 
     @Override
-    public ItemModel get(T value, ClientWorld world) {
-        /* ---------- 1. Exact match path ---------- */
+    public ItemModel get(T value, ClientLevel clientLevel) {
         ItemModel m = exactMatches.get(value);
         if (m != fallback) return m;
 
-        /* ---------- 2. Canonicalise to pooled String ---------- */
         String s = null;
-        if (value instanceof Text tv)             s = tv.getString();
-        else if (value instanceof Identifier id)  s = id.toString();
-        else if (value instanceof String str)     s = str;
+        if (value instanceof Component tv) s = tv.getString();
+        else if (value instanceof Identifier id) s = id.toString();
+        else if (value instanceof String str) s = str;
 
         s = StringPool.canonical(s);  // may return null
 
         if (s == null) return fallback;
 
-        /* ---------- 3. Bounded LRU regex‑hit cache ---------- */
         ItemModel cached = dynamicCache.get(s);
         if (cached != null) return cached;
 
-        /* ---------- 4. Regex evaluation ---------- */
         for (Pair<Pattern, ItemModel> rc : regexCases) {
             if (rc.getFirst().matcher(s).matches()) {
                 dynamicCache.put(s, rc.getSecond());

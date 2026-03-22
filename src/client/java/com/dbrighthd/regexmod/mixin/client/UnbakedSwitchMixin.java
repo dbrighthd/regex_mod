@@ -4,14 +4,16 @@ import com.dbrighthd.regexmod.cache.RegexCache;
 import com.dbrighthd.regexmod.selector.RegexModelSelector;
 import com.mojang.datafixers.util.Pair;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-import net.minecraft.client.render.item.model.ItemModel;
-import net.minecraft.client.render.item.model.ItemModel.BakeContext;
-import net.minecraft.client.render.item.model.SelectItemModel;
-import net.minecraft.client.render.item.model.SelectItemModel.SwitchCase;
-import net.minecraft.client.render.item.model.SelectItemModel.UnbakedSwitch;
-import net.minecraft.client.render.item.property.select.SelectProperty;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.renderer.item.ItemModel;
+import net.minecraft.client.renderer.item.ItemModel.BakingContext;
+import net.minecraft.client.renderer.item.SelectItemModel;
+import net.minecraft.client.renderer.item.SelectItemModel.SwitchCase;
+import net.minecraft.client.renderer.item.SelectItemModel.UnbakedSwitch;
+import net.minecraft.client.renderer.item.properties.select.SelectItemModelProperty;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
+import org.joml.Matrix4f;
+import org.joml.Matrix4fc;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -26,10 +28,11 @@ import java.util.regex.Pattern;
 public class UnbakedSwitchMixin {
 
 	@Shadow private List<SwitchCase<?>> cases;
-	@Shadow private SelectProperty<?>   property;
+	@Shadow private SelectItemModelProperty<?>   property;
 
 	@Inject(method = "bake", at = @At("HEAD"), cancellable = true)
-	private <T> void onBake(BakeContext context,
+	private <T> void onBake(BakingContext context,
+							Matrix4fc transformation,
 							ItemModel fallback,
 							CallbackInfoReturnable<ItemModel> cir) {
 
@@ -37,7 +40,7 @@ public class UnbakedSwitchMixin {
 		boolean hasRegex = false;
 		for (SwitchCase<?> sc0 : this.cases) {
 			for (Object v0 : sc0.values()) {
-				if (v0 instanceof Text t) {
+				if (v0 instanceof Component t) {
 					String raw = t.getString();
 					if (raw.startsWith("regex:") || raw.startsWith("iregex:")
 							|| raw.startsWith("pattern:") || raw.startsWith("ipattern:")) {
@@ -56,10 +59,10 @@ public class UnbakedSwitchMixin {
 		List<Pair<Pattern, ItemModel>> regexCases = new ArrayList<>();
 
 		for (SwitchCase<T> sc : (List<SwitchCase<T>>) (Object) this.cases) {
-			ItemModel baked = sc.model().bake(context);
+			ItemModel baked = sc.model().bake(context, transformation);
 
 			for (T val : sc.values()) {
-				if (val instanceof Text tVal) {
+				if (val instanceof Component tVal) {
 					String raw = tVal.getString();
 
 					if (raw.startsWith("regex:")) {
@@ -95,7 +98,7 @@ public class UnbakedSwitchMixin {
 		exactMatches.defaultReturnValue(fallback);
 
 		@SuppressWarnings("unchecked")
-		SelectProperty<T> prop = (SelectProperty<T>) (Object) this.property;
+		SelectItemModelProperty<T> prop = (SelectItemModelProperty<T>) this.property;
 
 		cir.setReturnValue(new SelectItemModel<>(prop,
 				new RegexModelSelector<>(exactMatches, regexCases, fallback)));
